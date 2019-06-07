@@ -2,8 +2,9 @@
 master ansible_host=master ansible_user=root
 
 [workers]
-worker1 ansible_host=workerone ansible_user=root
-worker2 ansible_host=workertwo ansible_user=root
+workerone ansible_host=workerone ansible_user=root
+workertwo ansible_host=workertwo ansible_user=root
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
+remote_tmp = $HOME/.ansible/tmp

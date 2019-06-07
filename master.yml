@@ -1,9 +1,19 @@
 - hosts: master
   become: yes
   tasks:
+
+    - name: check if file exist
+      stat: 
+        path: /etc/kubernetes/manifests/kube-apiserver.yaml
+      register: apiser_conf
+
+    - name:
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      when: apiser_conf.stat.exists == false
+ 
     - name: create .kube directory
       become: yes
-      become_user: ubuntu
+      become_user: devops
       file:
         path: $HOME/.kube
         state: directory
@@ -12,13 +22,13 @@
     - name: copy admin.conf to user's kube config
       copy:
         src: /etc/kubernetes/admin.conf
-        dest: /home/ubuntu/.kube/config
+        dest: /home/devops/.kube/config
         remote_src: yes
-        owner: ubuntu
+        owner: devops
 
     - name: install Pod network
       become: yes
-      become_user: ubuntu
+      become_user: devops
       shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml >> pod_network_setup.txt
       args:
         chdir: $HOME

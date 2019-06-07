@@ -1,6 +1,70 @@
 - hosts: all
   become: yes
   tasks:
+   
+   - name: Update the apt package index
+     become: yes
+     apt:
+       name: "*"
+       state: latest
+       update_cache: yes
+       force_apt_get: yes
+   - name: Install packages for apt add repository over HTTPS
+     become: yes
+     apt:
+       name: "{{ packagesdep }}"
+       force_apt_get: yes
+       state: latest
+       update_cache: yes
+     vars:
+       packagesdep:
+       - git
+       - apt-transport-https
+       - ca-certificates
+       - wget
+       - software-properties-common
+       - gnupg2
+       - curl
+   - name: Add Apt signing key from official docker repo
+     apt_key:
+       url: https://download.docker.com/linux/debian/gpg
+       state: present
+   - name: add docker official repository for Debian Stretch
+     apt_repository:
+       repo: deb [arch=amd64] https://download.docker.com/linux/debian stretch stable
+       state: present
+   - name: Index new repo into the cache
+     become: yes
+     apt:
+       name: "*"
+       state: latest
+       update_cache: yes
+       force_apt_get: yes
+   - name: actually install docker
+     apt:
+       name: "docker-ce"
+       state: latest
+
+   - name: setup deamon 
+     copy: 
+       src: ./daemon.json 
+       dest: /etc/docker/daemon.json
+
+   - name: create a directory
+     file:
+       path: /etc/systemd/system/docker.service.d
+       state: directory
+       recurse: yes
+
+   - name: just force systemd to reread configs (2.4 and above)
+     systemd:
+       daemon_reload: yes
+
+   - name: restart docker
+     systemd :
+       name: docker
+       state: restarted
+
    - name: add Kubernetes apt-key
      apt_key:
        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
@@ -24,6 +88,16 @@
        name: kubeadm
        force: yes
        state: present
+   
+   - name: Disable SWAP
+     shell: |
+       swapoff -a
+
+   - name: Disable SWAP permanently
+     replace:
+       path: /etc/fstab
+       regexp: '^(.+?\sswap\s+sw\s+.*)$'
+       replace: '# \1'
 
 - hosts: master
   become: yes
