@@ -1,2 +1,2 @@
 # kube-cluster-deb
-A stack ready to be used for setup kubernetes cluster .
+A stack ready to be used for setup kubernetes cluster for debian VMs.
