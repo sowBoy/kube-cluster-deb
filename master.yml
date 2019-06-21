@@ -33,4 +33,14 @@
       args:
         chdir: $HOME
         creates: pod_network_setup.txt
+        
+    - name: dowload helm script
+      get_url:
+        url: https://git.io/get_helm.sh
+        dest: ./get_helm.sh
+        mode: 700
+
+    - name: install helm
+      command: ./get_helm.sh
+
 
