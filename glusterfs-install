@@ -1,0 +1,67 @@
+- hosts: all
+  become: yes
+  tasks:
+
+    - name: Install packages for apt add repository over HTTPS
+      apt:
+        name: "{{ packagesdep }}"
+        force_apt_get: yes
+        state: latest
+      vars:
+        packagesdep:
+        - git
+        - apt-transport-https
+        - ca-certificates
+        - wget
+        - software-properties-common
+        - gnupg2
+        - curl
+        - debianutils
+        - debian-archive-keyring
+
+    - name: Add the GPG key to apt
+      apt_key:
+        url: https://download.gluster.org/pub/gluster/glusterfs/7/rsa.pub
+        state: present
+
+    - name: Add an DEBID env value
+      lineinfile:
+        path: /root/.bashrc
+        regexp: '.*DEBID.*'
+        line: export DEBID=$(grep 'VERSION_ID=' /etc/os-release | cut -d '=' -f 2 | tr -d '"')
+        state: present
+
+    - name: Add an DEBVER env value
+      lineinfile:
+        path: /root/.bashrc
+        regexp: '.*DEBVER.*'
+        line: export DEBVER=$(grep 'VERSION=' /etc/os-release | grep -Eo '[a-z]+')
+        state: present
+
+    - name: Add an DEBARCH env value
+      lineinfile:
+        path: /root/.bashrc
+        regexp: '.*DEBARCH.*'
+        line: export DEBARCH=$(dpkg --print-architecture)
+        state: present
+
+    - name: Create gluster source list file
+      file:
+        path: /etc/apt/sources.list.d/gluster.list
+        state: touch
+
+    - name: Add Source 
+      shell: echo deb https://download.gluster.org/pub/gluster/glusterfs/LATEST/Debian/${DEBID}/${DEBARCH}/apt ${DEBVER} main > /etc/apt/sources.list.d/gluster.list
+
+    - name: Install glusterFS
+      apt: 
+        name: glusterfs-server
+        state: present
+        update_cache: yes
+        force_apt_get: yes
+
+    - name: restart gluster daemon
+      systemd :
+        name: glusterd
+        state: restarted
+
